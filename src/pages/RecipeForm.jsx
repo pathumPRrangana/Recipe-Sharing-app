@@ -117,15 +117,24 @@ const RecipeForm = () => {
                 onChange={(e) => setCookingTime(e.target.value)}
                 sx={{ marginBottom: '20px' }}
               />
-              <TextField
+            <TextField
                 label="Rating (0 - 5)"
                 variant="outlined"
                 fullWidth
                 type="number"
                 value={rating}
-                onChange={(e) => setRating(e.target.value)}
+                onChange={(e) => {
+                 const value = parseFloat(e.target.value);
+                 if (value >= 0 && value <= 5) {
+                   setRating(e.target.value);
+                 } else if (e.target.value === '') {
+                   setRating('');
+                 }
+                }}
+                inputProps={{ min: 0, max: 5, step: 0.1 }}
                 sx={{ marginBottom: '20px' }}
-              />
+                 />
+
               <Button variant="contained" color="primary" type="submit" fullWidth>
                 {id ? 'Update Recipe' : 'Create Recipe'}
               </Button>
