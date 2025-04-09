@@ -1,7 +1,8 @@
 import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+
 import {
-  ThemeProvider,
+  ThemeProvider as MuiThemeProvider,
   createTheme,
   CssBaseline,
   AppBar,
@@ -22,38 +23,54 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import MyRecipes from "./pages/MyRecipes";
 
-import { seedMockData } from "./services/mockApi/mockData"; 
+import { seedMockData } from "./services/mockApi/mockData";
 
-// Initialize mock data only once when the app starts
-const App = () => {
-  useEffect(() => {
-    seedMockData();  // Seed the mock data once on initial load
-  }, []);
+// 🌙 Custom theme context
+import { ThemeProvider as CustomThemeProvider, useThemeContext } from './context/ThemeContext';
+import ThemeToggle from "./components/ThemeToggle"; // Adjust path if needed
 
-  const theme = createTheme({
+// 🔁 Wrapper to apply dynamic theme based on context
+const MuiThemeWrapper = () => {
+  const { theme } = useThemeContext();
+
+  const muiTheme = createTheme({
     palette: {
-      mode: "light",
+      mode: theme,
       primary: { main: "#1976d2" },
       secondary: { main: "#ff4081" },
     },
   });
 
   return (
-    <AuthProvider>
-      <RecipeProvider>
-        <FavoriteProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <BrowserRouter>
-              <AppLayout />
-            </BrowserRouter>
-          </ThemeProvider>
-        </FavoriteProvider>
-      </RecipeProvider>
-    </AuthProvider>
+    <MuiThemeProvider theme={muiTheme}>
+      <CssBaseline />
+      <BrowserRouter>
+        <AppLayout />
+      </BrowserRouter>
+    </MuiThemeProvider>
   );
 };
 
+// 🔁 Main app
+const App = () => {
+  useEffect(() => {
+    seedMockData(); // Seed the mock data once on initial load
+  }, []);
+
+  return (
+    <CustomThemeProvider>
+      <AuthProvider>
+        <RecipeProvider>
+          <FavoriteProvider>
+            <MuiThemeWrapper />
+          </FavoriteProvider>
+        </RecipeProvider>
+      </AuthProvider>
+    </CustomThemeProvider>
+  );
+};
+
+// 🔁 Layout with AppBar and routes
 const AppLayout = () => {
   const navigate = useNavigate();
   const userEmail = localStorage.getItem("userEmail");
@@ -67,9 +84,17 @@ const AppLayout = () => {
     <>
       <AppBar position="sticky">
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1, cursor: "pointer" }} onClick={() => navigate("/")}>
+          <Typography
+            variant="h6"
+            sx={{ flexGrow: 1, cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          >
             Recipe Sharing Platform
           </Typography>
+
+          {/* 🌗 Theme toggle button */}
+          <ThemeToggle />
+
           <Button color="inherit" onClick={() => navigate("/")}>Home</Button>
           {userEmail ? (
             <>
@@ -85,6 +110,7 @@ const AppLayout = () => {
           )}
         </Toolbar>
       </AppBar>
+
       <Container sx={{ mt: 4 }}>
         <Routes>
           <Route path="/" element={<RecipeFeed />} />

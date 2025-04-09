@@ -8,7 +8,10 @@ import { seedMockData } from "./services/mockApi/mockData";
 seedMockData();
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <Provider store={store}>
+  <React.StrictMode>
+  <ThemeProvider>
     <App />
-  </Provider>
+  </ThemeProvider>
+</React.StrictMode>
+  
 );
