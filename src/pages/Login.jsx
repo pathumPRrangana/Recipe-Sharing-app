@@ -19,10 +19,13 @@ const Login = () => {
       return;
     }
 
-    // Fake authentication (you can replace this with your actual authentication logic)
-    if (email === "hello" && password === "12345") {
-      localStorage.setItem("userEmail", email);
-      navigate("/create"); // Redirect to home page after login
+    // Retrieve stored credentials from localStorage
+    const storedEmail = localStorage.getItem("userEmail");
+    const storedPassword = localStorage.getItem("userPassword");
+
+    // Check if the entered credentials match the stored credentials
+    if (email === storedEmail && password === storedPassword) {
+      navigate("/"); // Redirect to home page after successful login
     } else {
       setError("Invalid credentials");
       setOpenSnackbar(true);

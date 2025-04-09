@@ -1,96 +1,128 @@
-import React, { useContext, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useContext, useState, useEffect } from 'react';
 import { RecipeContext } from '../context/RecipeContext';
+import { useParams } from 'react-router-dom';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CardMedia,
+  Typography,
+  Grid,
+} from '@mui/material';
 import { FavoriteContext } from '../context/FavoriteContext';
-import { Card, CardContent, Typography, Button, Grid, Box } from '@mui/material';
+import Timer from './timer';
 
 const RecipeDetails = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { recipes, deleteRecipe } = useContext(RecipeContext);
+  const { recipes } = useContext(RecipeContext);
   const { addFavorite, removeFavorite, favorites } = useContext(FavoriteContext);
 
-  // Find the recipe based on the ID
-  const recipe = recipes.find((recipe) => recipe.id === parseInt(id));
-  const isFavorite = recipe ? favorites.some((fav) => fav.id === recipe.id) : false;
-
-  const handleFavorite = () => {
-    if (recipe) {
-      if (isFavorite) {
-        removeFavorite(recipe.id);
-      } else {
-        addFavorite(recipe);
-      }
-    }
-  };
+  const [recipe, setRecipe] = useState(null);
 
   useEffect(() => {
-    if (!recipe) {
-      console.error('Recipe not found');
-    }
-  }, [recipe]);
+    const foundRecipe = recipes.find((r) => r.id === id);
+    setRecipe(foundRecipe);
+  }, [id, recipes]);
 
-  // If recipe is not found
   if (!recipe) {
     return <Typography variant="h6">Recipe not found</Typography>;
   }
 
-  // Handle case where ingredients are a string and split them
-  const ingredientsList = Array.isArray(recipe.ingredients)
-    ? recipe.ingredients
-    : recipe.ingredients ? recipe.ingredients.split(',') : [];
+  const imageSrc =
+    recipe.imageUrl || recipe.image || 'https://via.placeholder.com/500x300?text=No+Image';
 
-  // Conditionally render cooking time and rating if valid
-  const renderCookingTime = recipe.cookingTime && recipe.cookingTime !== 'N/A' ? `Cooking Time: ${recipe.cookingTime}` : null;
-  const renderRating = recipe.rating && recipe.rating !== 0 ? `Rating: ${recipe.rating}` : null;
+  const cookingTime = parseInt(
+    String(recipe.cookingTime || '').replace(/\D/g, '')
+  );
+
+  const handleFavorite = () => {
+    if (favorites.some((fav) => fav.id === recipe.id)) {
+      removeFavorite(recipe.id);
+    } else {
+      addFavorite(recipe);
+    }
+  };
+
+  const renderIngredients = () => {
+    if (!Array.isArray(recipe.ingredients)) return null;
+
+    return recipe.ingredients.map((ingredient, index) => {
+      if (typeof ingredient === 'string') {
+        // User-added recipe (ingredients as string array)
+        return <li key={index}>{ingredient}</li>;
+      } else if (typeof ingredient === 'object' && ingredient.name) {
+        // Mock/seeded recipe format
+        return (
+          <li key={index}>
+            {ingredient.name}
+            {Array.isArray(ingredient.alternatives) && ingredient.alternatives.length > 0 && (
+              <div style={{ marginTop: '5px', fontSize: '0.9rem', color: 'gray' }}>
+                <strong>Substitutes:</strong> {ingredient.alternatives.join(', ')}
+              </div>
+            )}
+          </li>
+        );
+      }
+      return null;
+    });
+  };
 
   return (
-    <div style={{ padding: '20px' }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+    <Box sx={{ padding: '20px' }}>
+      <Grid container spacing={4}>
+        <Grid item xs={12} sm={6}>
           <Card>
+            <CardMedia
+              component="img"
+              alt={recipe.title}
+              height="300"
+              image={imageSrc}
+            />
             <CardContent>
-              <Typography variant="h4">{recipe.title}</Typography>
+              <Typography variant="h4" gutterBottom>
+                {recipe.title}
+              </Typography>
 
-              {renderCookingTime && (
-                <Typography variant="body1" color="textSecondary">{renderCookingTime}</Typography>
-              )}
-              
-              {renderRating && (
-                <Typography variant="body1" color="textSecondary">{renderRating}</Typography>
-              )}
+              {cookingTime && <Timer cookingTime={cookingTime} />}
 
-              <Button variant="contained" color="primary" onClick={handleFavorite} sx={{ mt: 2 }}>
-                {isFavorite ? 'Remove from Favorites' : 'Save to Favorites'}
+              <Typography variant="body1" color="textSecondary">
+                Rating: {recipe.rating || 'N/A'}
+              </Typography>
+
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={handleFavorite}
+                sx={{ mt: 2 }}
+              >
+                {favorites.some((fav) => fav.id === recipe.id)
+                  ? 'Remove from Favorites'
+                  : 'Add to Favorites'}
               </Button>
-
-              {recipe.createdBy === localStorage.getItem("userEmail") && (
-                <Box mt={2}>
-                  <Button onClick={() => navigate(`/edit/${recipe.id}`)} sx={{ mr: 1 }}>Edit</Button>
-                  <Button color="error" onClick={() => deleteRecipe(recipe.id)}>Delete</Button>
-                </Box>
-              )}
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} sm={6}>
           <Typography variant="h5">Ingredients</Typography>
-          <ul>
-            {ingredientsList.length > 0 ? (
-              ingredientsList.map((ingredient, index) => (
-                <li key={index}>{ingredient.trim()}</li>
-              ))
-            ) : (
-              <Typography variant="body2" color="textSecondary">No ingredients listed.</Typography>
-            )}
-          </ul>
+          {recipe.ingredients && recipe.ingredients.length > 0 ? (
+            <ul>{renderIngredients()}</ul>
+          ) : (
+            <Typography variant="body1" color="textSecondary">
+              No ingredients available.
+            </Typography>
+          )}
 
-          <Typography variant="h5">Instructions</Typography>
-          <Typography variant="body1">{recipe.instructions}</Typography>
+          <Typography variant="h5" mt={3}>
+            Instructions
+          </Typography>
+          <Typography variant="body1">
+            {recipe.instructions || 'No instructions provided.'}
+          </Typography>
         </Grid>
       </Grid>
-    </div>
+    </Box>
   );
 };
 

@@ -1,9 +1,9 @@
-import React, { createContext, useState, useEffect, useReducer, useContext } from 'react';
+import React, { createContext, useEffect, useReducer, useContext } from 'react';
+import { nanoid } from 'nanoid'; // For unique IDs
 
-// Create a context
 const RecipeContext = createContext();
 
-// Define initial state
+// Initial state
 const initialState = {
   recipes: [],
 };
@@ -14,11 +14,11 @@ const UPDATE_RECIPE = 'UPDATE_RECIPE';
 const DELETE_RECIPE = 'DELETE_RECIPE';
 const SET_RECIPES = 'SET_RECIPES';
 
-// Reducer function to manage recipe actions
+// Reducer
+
 const recipeReducer = (state, action) => {
   switch (action.type) {
     case CREATE_RECIPE:
-      // Ensure the new recipe has a unique ID
       return { ...state, recipes: [...state.recipes, action.payload] };
     case UPDATE_RECIPE:
       return {
@@ -39,71 +39,60 @@ const recipeReducer = (state, action) => {
   }
 };
 
-// Create and export useRecipe hook for easy consumption of context
-export const useRecipe = () => {
-  return useContext(RecipeContext);
-};
+// Hook to use the Recipe context
+export const useRecipe = () => useContext(RecipeContext);
 
+// Provider
 const RecipeProvider = ({ children }) => {
-  // Initialize state with the reducer function
   const [state, dispatch] = useReducer(recipeReducer, initialState);
 
-  // Load recipes from localStorage when the component mounts
+  // Load recipes from localStorage on mount
   useEffect(() => {
-    const savedRecipes = localStorage.getItem("recipes");
-    if (savedRecipes) {
-      try {
-        const parsedRecipes = JSON.parse(savedRecipes);
-        dispatch({ type: SET_RECIPES, payload: parsedRecipes });
-      } catch (error) {
-        console.error('Error parsing recipes from localStorage', error);
-      }
-    } else {
-      // Mock data in case no recipes are saved
-      const mockRecipes = [
-        {
-          id: 1,
-          title: 'Spaghetti Bolognese',
-          cookingTime: '30 minutes',
-          rating: 4.5,
-          imageUrl: 'https://img.taste.com.au/iefuclj7/w1200-h630-cfill/taste/2016/11/spaghetti-bolognese-106560-1.jpeg',
-        },
-      
-      ];
-      dispatch({ type: SET_RECIPES, payload: mockRecipes });
+    try {
+      const savedRecipes = JSON.parse(localStorage.getItem('recipes')) || [];
+      dispatch({ type: SET_RECIPES, payload: savedRecipes });
+    } catch (error) {
+      console.error('Error loading recipes from localStorage', error);
     }
   }, []);
 
-  // Sync recipes with localStorage every time state changes
+  // Save recipes to localStorage only if there are any
   useEffect(() => {
     if (state.recipes.length > 0) {
-      localStorage.setItem("recipes", JSON.stringify(state.recipes));
+      try {
+        localStorage.setItem('recipes', JSON.stringify(state.recipes));
+      } catch (error) {
+        console.error('Error saving recipes to localStorage', error);
+      }
     }
   }, [state.recipes]);
 
-  // Action functions to dispatch state changes
+  // Create a new recipe
   const createRecipe = (recipe) => {
-    const newRecipe = { ...recipe, id: Date.now() }; // Ensure the new recipe has a unique ID
+    const newRecipe = { ...recipe, id: nanoid() };  // Generate unique ID
     dispatch({ type: CREATE_RECIPE, payload: newRecipe });
   };
 
+  // Update an existing recipe
   const updateRecipe = (updatedRecipe) => {
     dispatch({ type: UPDATE_RECIPE, payload: updatedRecipe });
   };
 
+  // Delete a recipe by id
   const deleteRecipe = (id) => {
     dispatch({ type: DELETE_RECIPE, payload: id });
   };
 
+  // Get a recipe by id
   const getRecipeById = (id) => {
-    return state.recipes.find((recipe) => recipe.id === parseInt(id));
+    return state.recipes.find((recipe) => recipe.id === id);
   };
 
   return (
     <RecipeContext.Provider
       value={{
         recipes: state.recipes,
-        createRecipe, // Changed to createRecipe for consistency
+        createRecipe,
         updateRecipe,
         deleteRecipe,
         getRecipeById,

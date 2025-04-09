@@ -1,153 +1,139 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { TextField, Button, Box, Typography, CircularProgress } from "@mui/material";
-import { useAuth } from "../context/AuthContext";
-import { useRecipe } from "../context/RecipeContext";
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { TextField, Button, Grid, Typography, Card, CardContent } from '@mui/material';
+import { useRecipe } from '../context/RecipeContext';
 
 const RecipeForm = () => {
-  const { id } = useParams();
   const navigate = useNavigate();
-  const { userEmail } = useAuth();
-  const { createRecipe, updateRecipe, getRecipeById } = useRecipe();
+  const { id } = useParams(); // Get id from URL
+  const { createRecipe, updateRecipe, recipes } = useRecipe(); // Access create and update functions
 
-  const [recipe, setRecipe] = useState({
-    title: "",
-    ingredients: "",
-    instructions: "",
-    imageUrl: "",
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [title, setTitle] = useState('');
+  const [image, setImage] = useState('');
+  const [ingredients, setIngredients] = useState(''); // Store as string for user input
+  const [instructions, setInstructions] = useState('');
+  const [cookingTime, setCookingTime] = useState('');
+  const [rating, setRating] = useState('');
 
-  // Fetch recipe data if editing
+  // Populate form fields when editing a recipe
   useEffect(() => {
-    const fetchRecipe = async () => {
-      if (id) {
-        setLoading(true);
-        try {
-          const recipeData = await getRecipeById(id);
-          if (recipeData) {
-            setRecipe(recipeData);
-          } else {
-            setError("Recipe not found.");
-          }
-        } catch {
-          setError("Error loading recipe.");
-        } finally {
-          setLoading(false);
-        }
+    if (id) {
+      const recipeToEdit = recipes.find((recipe) => recipe.id === id);
+      if (recipeToEdit) {
+        setTitle(recipeToEdit.title);
+        setImage(recipeToEdit.image || recipeToEdit.imageUrl || '');
+        setIngredients(
+          Array.isArray(recipeToEdit.ingredients)
+            ? recipeToEdit.ingredients.join(', ')
+            : ''
+        );
+        setInstructions(recipeToEdit.instructions);
+        setCookingTime(recipeToEdit.cookingTime);
+        setRating(recipeToEdit.rating);
       }
-    };
-    fetchRecipe();
-  }, [id, getRecipeById]);
+    }
+  }, [id, recipes]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setRecipe((prevRecipe) => ({ ...prevRecipe, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");  // Reset error message before submitting
 
-    const { title, ingredients, instructions, imageUrl } = recipe;
-
-    // Basic validation
-    if (!title || !ingredients || !instructions) {
-      setError("All fields are required.");
-      setLoading(false);
+    if (!title || !ingredients) {
+      alert('Title and Ingredients are required!');
       return;
     }
 
+    const userEmail = localStorage.getItem('userEmail');
+
     const newRecipe = {
+      id: id || crypto.randomUUID(),
       title,
-      ingredients,
+      image,
+      ingredients: ingredients
+        .split(',')
+        .map((ingredient) => ingredient.trim())
+        .filter((ingredient) => ingredient), // Remove empty strings
       instructions,
-      imageUrl,
-      createdBy: userEmail || localStorage.getItem("userEmail"), // Ensure fallback for userEmail
+      cookingTime: Number(cookingTime) || 0,
+      rating: Number(rating) || 0,
+      createdBy: userEmail,
     };
 
-    try {
-      if (id) {
-        // Update existing recipe
-        await updateRecipe(id, newRecipe);
-        navigate("/my-recipes");
-      } else {
-        // Create new recipe
-        await createRecipe(newRecipe);
-        navigate("/");
-      }
-    } catch {
-      setError("Error processing recipe.");
-    } finally {
-      setLoading(false);
+    if (id) {
+      updateRecipe(newRecipe);
+    } else {
+      createRecipe(newRecipe);
     }
+
+    navigate('/');
   };
 
   return (
-    <Box sx={{ maxWidth: 600, margin: "0 auto", padding: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        {id ? "Edit Recipe" : "Create Recipe"}
-      </Typography>
-
-      {loading && <CircularProgress />}
-
-      {error && (
-        <Typography color="error" variant="body2" gutterBottom>
-          {error}
-        </Typography>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="Recipe Title"
-          name="title"
-          value={recipe.title}
-          onChange={handleInputChange}
-          fullWidth
-          required
-          sx={{ mb: 2 }}
-        />
-
-        <TextField
-          label="Ingredients"
-          name="ingredients"
-          value={recipe.ingredients}
-          onChange={handleInputChange}
-          fullWidth
-          required
-          multiline
-          rows={4}
-          sx={{ mb: 2 }}
-        />
-
-        <TextField
-          label="Instructions"
-          name="instructions"
-          value={recipe.instructions}
-          onChange={handleInputChange}
-          fullWidth
-          required
-          multiline
-          rows={6}
-          sx={{ mb: 2 }}
-        />
-
-        <TextField
-          label="Image URL (optional)"
-          name="imageUrl"
-          value={recipe.imageUrl}
-          onChange={handleInputChange}
-          fullWidth
-          sx={{ mb: 2 }}
-        />
-
-        <Button type="submit" variant="contained" color="primary" fullWidth disabled={loading}>
-          {id ? "Update Recipe" : "Create Recipe"}
-        </Button>
-      </form>
-    </Box>
+    <Grid container spacing={3} justifyContent="center" sx={{ mt: 4 }}>
+      <Grid item xs={12} sm={6}>
+        <Card>
+          <CardContent>
+            <Typography variant="h6">{id ? 'Edit Recipe' : 'Create a Recipe'}</Typography>
+            <form onSubmit={handleSubmit}>
+              <TextField
+                label="Recipe Title"
+                variant="outlined"
+                fullWidth
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                sx={{ marginBottom: '20px' }}
+              />
+              <TextField
+                label="Image URL"
+                variant="outlined"
+                fullWidth
+                value={image}
+                onChange={(e) => setImage(e.target.value)}
+                sx={{ marginBottom: '20px' }}
+              />
+              <TextField
+                label="Ingredients (comma separated)"
+                variant="outlined"
+                fullWidth
+                value={ingredients}
+                onChange={(e) => setIngredients(e.target.value)}
+                sx={{ marginBottom: '20px' }}
+              />
+              <TextField
+                label="Instructions"
+                variant="outlined"
+                fullWidth
+                multiline
+                rows={4}
+                value={instructions}
+                onChange={(e) => setInstructions(e.target.value)}
+                sx={{ marginBottom: '20px' }}
+              />
+              <TextField
+                label="Cooking Time (in minutes)"
+                variant="outlined"
+                fullWidth
+                type="number"
+                value={cookingTime}
+                onChange={(e) => setCookingTime(e.target.value)}
+                sx={{ marginBottom: '20px' }}
+              />
+              <TextField
+                label="Rating (0 - 5)"
+                variant="outlined"
+                fullWidth
+                type="number"
+                value={rating}
+                onChange={(e) => setRating(e.target.value)}
+                sx={{ marginBottom: '20px' }}
+              />
+              <Button variant="contained" color="primary" type="submit" fullWidth>
+                {id ? 'Update Recipe' : 'Create Recipe'}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid>
   );
 };
 

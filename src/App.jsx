@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import {
   ThemeProvider,
@@ -8,7 +8,6 @@ import {
   Toolbar,
   Typography,
   Button,
-  Box,
   Container,
 } from "@mui/material";
 
@@ -21,17 +20,41 @@ import RecipeForm from "./pages/RecipeForm";
 import RecipeDetails from "./pages/RecipeDetails";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import MyRecipes from "./pages/MyRecipes"; 
+import MyRecipes from "./pages/MyRecipes";
 
-const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: { main: "#1976d2" },
-    secondary: { main: "#ff4081" },
-  },
-});
+import { seedMockData } from "./services/mockApi/mockData"; 
 
-const AppLayout = ({ children }) => {
+// Initialize mock data only once when the app starts
+const App = () => {
+  useEffect(() => {
+    seedMockData();  // Seed the mock data once on initial load
+  }, []);
+
+  const theme = createTheme({
+    palette: {
+      mode: "light",
+      primary: { main: "#1976d2" },
+      secondary: { main: "#ff4081" },
+    },
+  });
+
+  return (
+    <AuthProvider>
+      <RecipeProvider>
+        <FavoriteProvider>
+          <ThemeProvider theme={theme}>
+            <CssBaseline />
+            <BrowserRouter>
+              <AppLayout />
+            </BrowserRouter>
+          </ThemeProvider>
+        </FavoriteProvider>
+      </RecipeProvider>
+    </AuthProvider>
+  );
+};
+
+const AppLayout = () => {
   const navigate = useNavigate();
   const userEmail = localStorage.getItem("userEmail");
 
@@ -62,35 +85,18 @@ const AppLayout = ({ children }) => {
           )}
         </Toolbar>
       </AppBar>
-      <Container sx={{ mt: 4 }}>{children}</Container>
+      <Container sx={{ mt: 4 }}>
+        <Routes>
+          <Route path="/" element={<RecipeFeed />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/create" element={<RecipeForm />} />
+          <Route path="/edit/:id" element={<RecipeForm />} />
+          <Route path="/recipe/:id" element={<RecipeDetails />} />
+          <Route path="/my-recipes" element={<MyRecipes />} />
+        </Routes>
+      </Container>
     </>
-  );
-};
-
-const App = () => {
-  return (
-    <AuthProvider>
-      <RecipeProvider>
-        <FavoriteProvider>
-          <ThemeProvider theme={theme}>
-            <CssBaseline />
-            <BrowserRouter>
-              <AppLayout>
-                <Routes>
-                  <Route path="/" element={<RecipeFeed />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/create" element={<RecipeForm />} />
-                  <Route path="/edit/:id" element={<RecipeForm />} />
-                  <Route path="/recipe/:id" element={<RecipeDetails />} />
-                  <Route path="/my-recipes" element={<MyRecipes />} /> {/* ✅ New route */}
-                </Routes>
-              </AppLayout>
-            </BrowserRouter>
-          </ThemeProvider>
-        </FavoriteProvider>
-      </RecipeProvider>
-    </AuthProvider>
   );
 };
 

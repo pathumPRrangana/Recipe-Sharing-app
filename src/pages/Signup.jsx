@@ -26,8 +26,11 @@ const Signup = () => {
       return;
     }
 
-    // Fake signup (you can replace this with actual signup logic)
-    // After successful signup, navigate to login or home page
+    // Save user data to localStorage
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userPassword", password); // Store password (in real-world apps, use proper encryption)
+
+    // After successful signup, navigate to login page
     navigate("/login");
   };
 
