@@ -55,4 +55,14 @@ body {
   color: var(--text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+.social-sharing {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.social-sharing h4 {
+  margin-right: 10px;
+}
+
 

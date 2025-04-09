@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { FavoriteContext } from '../context/FavoriteContext';
 import Timer from './timer';
+import SocialSharing from '../components/SocialSharing';
 
 const RecipeDetails = () => {
   const { id } = useParams();
@@ -44,6 +45,7 @@ const RecipeDetails = () => {
     }
   };
 
+  // Re-enabled ingredient substitutions
   const renderIngredients = () => {
     if (!Array.isArray(recipe.ingredients)) return null;
 
@@ -67,6 +69,8 @@ const RecipeDetails = () => {
       return null;
     });
   };
+
+  const recipeUrl = window.location.href; // Get current URL for sharing
 
   return (
     <Box sx={{ padding: '20px' }}>
@@ -120,6 +124,9 @@ const RecipeDetails = () => {
           <Typography variant="body1">
             {recipe.instructions || 'No instructions provided.'}
           </Typography>
+
+          {/* Add the SocialSharing component */}
+          <SocialSharing recipeTitle={recipe.title} recipeUrl={recipeUrl} />
         </Grid>
       </Grid>
     </Box>
